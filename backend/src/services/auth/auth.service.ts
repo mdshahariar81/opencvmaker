@@ -1,6 +1,7 @@
 import argon2 from "argon2";
 
 import { db } from "../../config/database.js";
+import { AppError } from "../../errors/app-error.js";
 import type { RegisterInput } from "../../validation/auth/register.schema.js";
 
 /**
@@ -28,7 +29,10 @@ export const authService = {
 
     // Prevent duplicate account registration.
     if (existingUser) {
-      throw new Error("An account with this email already exists");
+        throw new AppError(
+        "An account with this email already exists",
+        409,
+            );
     }
 
     // Never store the user's plain-text password.
