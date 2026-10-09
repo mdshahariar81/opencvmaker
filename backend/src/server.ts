@@ -6,7 +6,7 @@ import helmet from "@fastify/helmet";
 import { env } from "./config/env.js";
 import { errorHandler } from "./middleware/error-handlers.js";
 import jwtPlugin from "./plugins/jwt.js";
-
+import { cvRoutes } from "./routes/cvs/cv.routes.js";
 import { healthRoute } from "./routes/health.js";
 import { userRoutes } from "./routes/users/user.routes.js";
 import { authRoutes } from "./routes/auth/auth.routes.js";
@@ -64,6 +64,7 @@ await app.register(jwtPlugin);
 await app.register(healthRoute);
 await app.register(userRoutes);
 await app.register(authRoutes);
+await app.register(cvRoutes);
 
 /**
  * Start the Fastify server.
