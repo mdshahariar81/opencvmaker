@@ -1,21 +1,21 @@
 import type { FastifyInstance } from "fastify";
-import { db } from "../../config/database.js";
+
+import { userService } from "../../services/users/user.service.js";
 
 /**
  * User routes.
  *
- * This module will contain user-related API endpoints.
- * Authentication and authorization logic will be added
- * in the upcoming steps.
+ * HTTP request/response handling stays here.
+ * Database and business logic are handled by userService.
  */
 export async function userRoutes(app: FastifyInstance) {
   /**
    * GET /users
    *
-   * Returns all registered users from the database.
+   * Returns all registered users.
    */
   app.get("/users", async () => {
-    const users = await db.orm.public.User.all();
+    const users = await userService.getAllUsers();
 
     return {
       status: "ok",
