@@ -1,0 +1,1085 @@
+// ============================================================
+// OpenCVMaker - Professional CV Database Schema
+// ============================================================
+// Production-oriented schema for an open-source CV builder.
+//
+// Design goals:
+// - Structured CV data
+// - Optional CV sections
+// - Drag-and-drop section ordering
+// - Multiple templates
+// - Autosave/version metadata
+// - Subscription & usage tracking
+// - Export history
+// - Future AI / SaaS support
+// ============================================================
+
+
+// ============================================================
+// GENERATOR & DATABASE
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserRole {
+  USER
+  ADMIN
+  OWNER
+}
+
+enum CVStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+  BUSINESS
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
+  PAST_DUE
+}
+
+enum UsageType {
+  CV_CREATE
+  CV_EXPORT
+  AI_REQUEST
+}
+
+enum ExportFormat {
+  PDF
+  DOCX
+  JPG
+}
+
+enum ReferenceType {
+  PROFESSIONAL
+  ACADEMIC
+  PERSONAL
+}
+
+
+// ============================================================
+// USER
+// ============================================================
+
+model User {
+  id           String   @id @default(cuid())
+  email        String
+  passwordHash String?
+  name         String?
+  imageUrl     String?
+  role         UserRole @default(USER)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  cvs           CV[]
+  subscriptions Subscription[]
+  usageRecords  UsageRecord[]
+  profile       UserProfile?
+
+  @@unique([email])
+}
+
+
+// ============================================================
+// USER PROFILE
+// ============================================================
+
+model UserProfile {
+  id        String @id @default(cuid())
+  userId    String
+
+  phone     String?
+  location  String?
+  website   String?
+  linkedin  String?
+  github    String?
+  twitter   String?
+  portfolio String?
+  bio       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@unique([userId])
+}
+
+
+// ============================================================
+// CV
+// ============================================================
+
+model CV {
+  id         String @id @default(cuid())
+  userId     String
+
+  title      String
+  slug       String?
+
+  status     CVStatus   @default(DRAFT)
+  visibility Visibility @default(PRIVATE)
+  isPublic   Boolean    @default(false)
+
+  // Selected template.
+  templateId String?
+
+  // Flexible snapshot / backup data.
+  data Json
+
+  // Autosave / revision metadata.
+  version Int @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  template Template? @relation(
+    fields: [templateId],
+    references: [id],
+    onDelete: SetNull
+  )
+
+  // ==========================================================
+  // CV SECTIONS
+  // ==========================================================
+
+  personalInformation PersonalInformation?
+  summary             ProfessionalSummary?
+
+  education           Education[]
+  workExperience      WorkExperience[]
+  skills              Skill[]
+  projects            Project[]
+  certifications      Certification[]
+  languages           Language[]
+  awards              Award[]
+  volunteerExperience VolunteerExperience[]
+
+  publications        Publication[]
+  conferences         Conference[]
+  courses             Course[]
+  memberships         Membership[]
+
+  teachingExperience  TeachingExperience[]
+  leadershipExperience LeadershipExperience[]
+  activities          ExtracurricularActivity[]
+
+  patents             Patent[]
+  interests           Interest[]
+  references          Reference[]
+
+  customSections      CustomSection[]
+
+  // Section visibility and ordering.
+  sectionSettings     CVSectionSetting[]
+
+  // Export history.
+  exports             CVExport[]
+
+  @@unique([slug])
+  @@index([userId])
+  @@index([status])
+}
+
+
+// ============================================================
+// TEMPLATE
+// ============================================================
+
+model Template {
+  id          String @id @default(cuid())
+
+  key         String
+  name        String
+  description String?
+
+  version     String @default("1.0.0")
+
+  previewUrl  String?
+  config      Json?
+
+  isActive    Boolean @default(true)
+  isDefault   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cvs CV[]
+
+  @@unique([key])
+}
+
+
+// ============================================================
+// PERSONAL INFORMATION
+// ============================================================
+
+model PersonalInformation {
+  id  String @id @default(cuid())
+  cvId String
+
+  firstName         String
+  lastName          String?
+  professionalTitle String?
+
+  email      String?
+  phone      String?
+
+  address    String?
+  city       String?
+  state      String?
+  postalCode String?
+  country    String?
+
+  website   String?
+  linkedin  String?
+  github    String?
+  twitter  String?
+  instagram String?
+
+  profileImageUrl String?
+
+  // Optional regional CV information.
+  dateOfBirth String?
+  nationality String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@unique([cvId])
+}
+
+
+// ============================================================
+// PROFESSIONAL SUMMARY
+// ============================================================
+
+model ProfessionalSummary {
+  id        String @id @default(cuid())
+  cvId      String
+
+  content   String
+  isVisible Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@unique([cvId])
+}
+
+
+// ============================================================
+// EDUCATION
+// ============================================================
+
+model Education {
+  id          String @id @default(cuid())
+  cvId        String
+
+  institution String
+  degree      String
+  field       String?
+  location    String?
+
+  startDate DateTime?
+  endDate   DateTime?
+  current   Boolean @default(false)
+
+  grade       String?
+  description String?
+  url         String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// WORK EXPERIENCE
+// ============================================================
+
+model WorkExperience {
+  id        String @id @default(cuid())
+  cvId     String
+
+  company  String
+  position String
+  location String?
+
+  employmentType String?
+
+  startDate DateTime?
+  endDate   DateTime?
+  current   Boolean @default(false)
+
+  description String?
+
+  // Bullet-point achievements.
+  achievements Json?
+
+  companyUrl String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// SKILLS
+// ============================================================
+
+model Skill {
+  id       String @id @default(cuid())
+  cvId     String
+
+  name     String
+  category String?
+  level    String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@unique([cvId, name])
+  @@index([cvId])
+}
+
+
+// ============================================================
+// PROJECTS
+// ============================================================
+
+model Project {
+  id          String @id @default(cuid())
+  cvId        String
+
+  name        String
+  description String?
+
+  role String?
+
+  startDate DateTime?
+  endDate   DateTime?
+  current   Boolean @default(false)
+
+  url        String?
+  repository String?
+
+  // Example: ["Next.js", "TypeScript", "PostgreSQL"]
+  technologies Json?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// CERTIFICATIONS
+// ============================================================
+
+model Certification {
+  id   String @id @default(cuid())
+  cvId String
+
+  name   String
+  issuer String?
+
+  credentialId  String?
+  credentialUrl String?
+
+  issueDate     DateTime?
+  expiryDate    DateTime?
+  doesNotExpire Boolean @default(false)
+
+  description String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// LANGUAGES
+// ============================================================
+
+model Language {
+  id   String @id @default(cuid())
+  cvId String
+
+  name  String
+  level String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@unique([cvId, name])
+  @@index([cvId])
+}
+
+
+// ============================================================
+// AWARDS & ACHIEVEMENTS
+// ============================================================
+
+model Award {
+  id   String @id @default(cuid())
+  cvId String
+
+  title       String
+  issuer      String?
+
+  date        DateTime?
+  description String?
+  url         String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// VOLUNTEER EXPERIENCE
+// ============================================================
+
+model VolunteerExperience {
+  id   String @id @default(cuid())
+  cvId String
+
+  organization String
+  role         String
+
+  location String?
+
+  startDate DateTime?
+  endDate   DateTime?
+  current   Boolean @default(false)
+
+  description String?
+  url         String?
+
+  // Volunteer achievements / impact.
+  achievements Json?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// PUBLICATIONS / RESEARCH
+// ============================================================
+
+model Publication {
+  id   String @id @default(cuid())
+  cvId String
+
+  title     String
+  authors   String?
+  publisher String?
+
+  publicationDate DateTime?
+
+  journal String?
+  volume  String?
+  issue   String?
+  pages   String?
+
+  doi String?
+  url String?
+
+  description String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// CONFERENCES
+// ============================================================
+
+model Conference {
+  id   String @id @default(cuid())
+  cvId String
+
+  name      String
+  organizer String?
+
+  role     String?
+  location String?
+
+  startDate DateTime?
+  endDate   DateTime?
+
+  description String?
+  url         String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// COURSES / TRAINING
+// ============================================================
+
+model Course {
+  id   String @id @default(cuid())
+  cvId String
+
+  name     String
+  provider String?
+
+  startDate DateTime?
+  endDate   DateTime?
+
+  credentialId  String?
+  credentialUrl String?
+
+  description String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// PROFESSIONAL MEMBERSHIPS / ORGANIZATIONS
+// ============================================================
+
+model Membership {
+  id   String @id @default(cuid())
+  cvId String
+
+  organization String
+  role         String?
+
+  startDate DateTime?
+  endDate   DateTime?
+  current   Boolean @default(false)
+
+  description String?
+  url         String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// TEACHING EXPERIENCE
+// ============================================================
+
+model TeachingExperience {
+  id   String @id @default(cuid())
+  cvId String
+
+  institution String
+  role        String
+
+  subject  String?
+  location String?
+
+  startDate DateTime?
+  endDate   DateTime?
+  current   Boolean @default(false)
+
+  description String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// LEADERSHIP EXPERIENCE
+// ============================================================
+
+model LeadershipExperience {
+  id   String @id @default(cuid())
+  cvId String
+
+  organization String
+  role         String
+
+  startDate DateTime?
+  endDate   DateTime?
+  current   Boolean @default(false)
+
+  description  String?
+  achievements Json?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// EXTRACURRICULAR ACTIVITIES
+// ============================================================
+
+model ExtracurricularActivity {
+  id   String @id @default(cuid())
+  cvId String
+
+  name String
+  role String?
+
+  organization String?
+
+  startDate DateTime?
+  endDate   DateTime?
+  current   Boolean @default(false)
+
+  description String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// PATENTS
+// ============================================================
+
+model Patent {
+  id   String @id @default(cuid())
+  cvId String
+
+  title        String
+  patentNumber String?
+
+  inventors String?
+  issuer    String?
+
+  filingDate DateTime?
+  issueDate  DateTime?
+
+  status String?
+
+  url         String?
+  description String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// INTERESTS
+// ============================================================
+
+model Interest {
+  id   String @id @default(cuid())
+  cvId String
+
+  name        String
+  description String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@unique([cvId, name])
+  @@index([cvId])
+}
+
+
+// ============================================================
+// REFERENCES
+// ============================================================
+
+model Reference {
+  id   String @id @default(cuid())
+  cvId String
+
+  name     String
+  position String?
+  company  String?
+
+  type ReferenceType @default(PROFESSIONAL)
+
+  email String?
+  phone String?
+
+  relationship String?
+  website      String?
+
+  description String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// CUSTOM SECTIONS
+// ============================================================
+
+model CustomSection {
+  id   String @id @default(cuid())
+  cvId String
+
+  title       String
+  description String?
+
+  // Flexible JSON for user-defined CV sections.
+  content Json
+
+  sortOrder Int @default(0)
+  isVisible Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// CV SECTION SETTINGS
+// ============================================================
+
+model CVSectionSetting {
+  id   String @id @default(cuid())
+  cvId String
+
+  // Examples:
+  // education
+  // workExperience
+  // skills
+  // projects
+  // volunteerExperience
+  // publications
+  // etc.
+  sectionKey String
+
+  isVisible Boolean @default(true)
+
+  // Used by drag-and-drop section ordering.
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@unique([cvId, sectionKey])
+  @@index([cvId])
+}
+
+
+// ============================================================
+// CV EXPORT HISTORY
+// ============================================================
+
+model CVExport {
+  id   String @id @default(cuid())
+  cvId String
+
+  format ExportFormat
+
+  fileUrl  String?
+  fileSize Int?
+
+  createdAt DateTime @default(now())
+
+  cv CV @relation(
+    fields: [cvId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([cvId])
+}
+
+
+// ============================================================
+// SUBSCRIPTIONS
+// ============================================================
+
+model Subscription {
+  id     String @id @default(cuid())
+  userId String
+
+  plan   SubscriptionPlan
+  status SubscriptionStatus
+
+  provider                  String?
+  providerCustomerId        String?
+  providerSubscriptionId    String?
+
+  startDate DateTime
+  endDate   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([userId])
+  @@index([status])
+}
+
+
+// ============================================================
+// USAGE RECORDS
+// ============================================================
+
+model UsageRecord {
+  id     String @id @default(cuid())
+  userId String
+
+  type UsageType
+
+  // Optional CV associated with this usage event.
+  cvId String?
+
+  // Future analytics / AI metadata.
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([userId])
+  @@index([userId, type])
+  @@index([cvId])
+}
