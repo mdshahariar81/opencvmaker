@@ -1,3 +1,4 @@
+import { authRoutes } from "./routes/auth/auth.routes.js";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
@@ -24,6 +25,7 @@ await app.register(cors, {
 // Application routes
 await app.register(healthRoute);
 await app.register(userRoutes);
+await app.register(authRoutes);
 
 // Start server
 const startServer = async () => {
