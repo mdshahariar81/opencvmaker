@@ -1,7 +1,9 @@
 import type { FastifyInstance } from "fastify";
 
 import { authService } from "../../services/auth/auth.service.js";
+import { loginService } from "../../services/auth/login.service.js";
 import { registerSchema } from "../../validation/auth/register.schema.js";
+import { loginSchema } from "../../validation/auth/login.schema.js";
 
 /**
  * Authentication routes.
@@ -44,6 +46,33 @@ export async function authRoutes(app: FastifyInstance) {
     return reply.status(201).send({
       status: "success",
       message: "Account created successfully",
+      user,
+    });
+  });
+
+  /**
+   * POST /auth/login
+   *
+   * Authenticates an existing user.
+   *
+   * Request body:
+   * {
+   *   email: string,
+   *   password: string
+   * }
+   */
+  app.post("/auth/login", async (request, reply) => {
+    // Validate and normalize the incoming login credentials.
+    const input = loginSchema.parse(request.body);
+
+    // Authenticate the user through the login service.
+    const user = await loginService.login(input);
+
+    // Return safe user information.
+    // Password/hash information is never exposed.
+    return reply.status(200).send({
+      status: "success",
+      message: "Login successful",
       user,
     });
   });
