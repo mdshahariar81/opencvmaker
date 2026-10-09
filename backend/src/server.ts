@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 
+import { personalInformationRoutes } from "./routes/cvs/personal-information.routes.js";
 import { env } from "./config/env.js";
 import { errorHandler } from "./middleware/error-handlers.js";
 import jwtPlugin from "./plugins/jwt.js";
@@ -65,6 +66,7 @@ await app.register(healthRoute);
 await app.register(userRoutes);
 await app.register(authRoutes);
 await app.register(cvRoutes);
+await app.register(personalInformationRoutes);
 
 /**
  * Start the Fastify server.
