@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 
+import { skillRoutes } from "./routes/cvs/skill.routes.js";
 import { workExperienceRoutes } from "./routes/cvs/work-experience.routes.js";
 import { educationRoutes } from "./routes/cvs/education.routes.js";
 import { professionalSummaryRoutes } from "./routes/cvs/professional-summary.routes.js";
@@ -73,6 +74,7 @@ await app.register(personalInformationRoutes);
 await app.register(professionalSummaryRoutes);
 await app.register(educationRoutes);
 await app.register(workExperienceRoutes);
+await app.register(skillRoutes);
 
 
 /**
