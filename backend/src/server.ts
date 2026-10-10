@@ -3,22 +3,32 @@ import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 
-import { awardRoutes } from "./routes/cvs/award.routes.js";
-import { projectRoutes } from "./routes/cvs/project.routes.js";
-import { skillRoutes } from "./routes/cvs/skill.routes.js";
-import { workExperienceRoutes } from "./routes/cvs/work-experience.routes.js";
-import { educationRoutes } from "./routes/cvs/education.routes.js";
-import { professionalSummaryRoutes } from "./routes/cvs/professional-summary.routes.js";
-import { certificationRoutes } from "./routes/cvs/certification.routes.js";
-import { languageRoutes } from "./routes/cvs/language.routes.js";
-import { personalInformationRoutes } from "./routes/cvs/personal-information.routes.js";
+// Configuration
 import { env } from "./config/env.js";
-import { errorHandler } from "./middleware/error-handlers.js";
+
+// Plugins
 import jwtPlugin from "./plugins/jwt.js";
-import { cvRoutes } from "./routes/cvs/cv.routes.js";
+
+// Middleware
+import { errorHandler } from "./middleware/error-handlers.js";
+
+// General routes
 import { healthRoute } from "./routes/health.js";
 import { userRoutes } from "./routes/users/user.routes.js";
 import { authRoutes } from "./routes/auth/auth.routes.js";
+
+// CV routes
+import { cvRoutes } from "./routes/cvs/cv.routes.js";
+import { personalInformationRoutes } from "./routes/cvs/personal-information.routes.js";
+import { professionalSummaryRoutes } from "./routes/cvs/professional-summary.routes.js";
+import { educationRoutes } from "./routes/cvs/education.routes.js";
+import { workExperienceRoutes } from "./routes/cvs/work-experience.routes.js";
+import { skillRoutes } from "./routes/cvs/skill.routes.js";
+import { projectRoutes } from "./routes/cvs/project.routes.js";
+import { certificationRoutes } from "./routes/cvs/certification.routes.js";
+import { languageRoutes } from "./routes/cvs/language.routes.js";
+import { awardRoutes } from "./routes/cvs/award.routes.js";
+import { volunteerExperienceRoutes } from "./routes/cvs/volunteer-experience.routes.js";
 
 /**
  * Create Fastify application.
@@ -41,7 +51,7 @@ app.setErrorHandler(errorHandler);
 await app.register(helmet);
 
 /**
- * Allow frontend to communicate with backend.
+ * Allow the frontend to communicate with the backend.
  *
  * NOTE:
  * In production, replace `origin: true`
@@ -54,35 +64,42 @@ await app.register(cors, {
 /**
  * Cookie support.
  *
- * This allows the backend to create and read
- * HTTP cookies for authentication.
+ * Required for HTTP cookie-based authentication.
  */
 await app.register(cookie);
 
 /**
- * JWT authentication.
+ * JWT authentication plugin.
  *
- * Registers JWT support before authentication
- * routes are initialized.
+ * Must be registered before routes that
+ * depend on JWT authentication.
  */
 await app.register(jwtPlugin);
 
 /**
  * Application routes.
+ *
+ * Routes are grouped logically:
+ * 1. General application routes
+ * 2. Core CV routes
+ * 3. CV content sections
  */
 await app.register(healthRoute);
 await app.register(userRoutes);
 await app.register(authRoutes);
+
 await app.register(cvRoutes);
+
 await app.register(personalInformationRoutes);
 await app.register(professionalSummaryRoutes);
-await app.register(certificationRoutes);
-await app.register(languageRoutes);
 await app.register(educationRoutes);
 await app.register(workExperienceRoutes);
 await app.register(skillRoutes);
 await app.register(projectRoutes);
+await app.register(certificationRoutes);
+await app.register(languageRoutes);
 await app.register(awardRoutes);
+await app.register(volunteerExperienceRoutes);
 
 /**
  * Start the Fastify server.
