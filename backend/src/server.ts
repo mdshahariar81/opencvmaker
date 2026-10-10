@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 
+import { awardRoutes } from "./routes/cvs/award.routes.js";
 import { projectRoutes } from "./routes/cvs/project.routes.js";
 import { skillRoutes } from "./routes/cvs/skill.routes.js";
 import { workExperienceRoutes } from "./routes/cvs/work-experience.routes.js";
@@ -81,6 +82,7 @@ await app.register(educationRoutes);
 await app.register(workExperienceRoutes);
 await app.register(skillRoutes);
 await app.register(projectRoutes);
+await app.register(awardRoutes);
 
 /**
  * Start the Fastify server.
