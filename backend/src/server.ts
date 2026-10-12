@@ -21,6 +21,7 @@ import { authRoutes } from "./routes/auth/auth.routes.js";
 import { leadershipExperienceRoutes } from "./routes/cvs/leadership-experience.routes.js";
 import { extracurricularActivityRoutes } from "./routes/cvs/extracurricular-activity.routes.js";
 import { patentRoutes } from "./routes/cvs/patent.routes.js";
+import { interestRoutes } from "./routes/cvs/interest.routes.js";
 import { teachingExperienceRoutes } from "./routes/cvs/teaching-experience.routes.js";
 import { membershipRoutes } from "./routes/cvs/membership.routes.js";
 import { cvRoutes } from "./routes/cvs/cv.routes.js";
@@ -116,6 +117,7 @@ await app.register(teachingExperienceRoutes);
 await app.register(leadershipExperienceRoutes);
 await app.register(extracurricularActivityRoutes);
 await app.register(patentRoutes);
+await app.register(interestRoutes);
 
 /**
  * Start the Fastify server.
