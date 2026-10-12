@@ -598,8 +598,10 @@ model Membership {
   id           String    @id @default(cuid())
   cvId         String
 
-  organization String
-  role         String?
+  organization   String
+  role           String?
+  membershipType String?
+  membershipId   String?
 
   startDate    DateTime?
   endDate      DateTime?

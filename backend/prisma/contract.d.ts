@@ -21,7 +21,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'0680811b8148fc4d84baaec2390755da26645af7c4cdb2e0f7dd07702e8316de'>;
+  StorageHashBase<'a36f26a1473d432de17450bdda7c413292d8c254edba65cb137dbf842b5e3b28'>;
 export type ExecutionHash =
   ExecutionHashBase<'7e5a3ce6686839f46b1cf08d0c5d1b51d99f567e873478d9f074689fa1fd28a1'>;
 export type ProfileHash =
@@ -405,6 +405,8 @@ export type FieldOutputTypes = {
       readonly description: CodecTypes['pg/text@1']['output'] | null;
       readonly endDate: TimestampString<3> | null;
       readonly id: CodecTypes['pg/text@1']['output'];
+      readonly membershipId: CodecTypes['pg/text@1']['output'] | null;
+      readonly membershipType: CodecTypes['pg/text@1']['output'] | null;
       readonly organization: CodecTypes['pg/text@1']['output'];
       readonly role: CodecTypes['pg/text@1']['output'] | null;
       readonly sortOrder: CodecTypes['pg/int4@1']['output'];
@@ -798,6 +800,8 @@ export type FieldInputTypes = {
       readonly description: CodecTypes['pg/text@1']['input'] | null;
       readonly endDate: CodecTypes['pg/timestamp-string@1']['input'] | null;
       readonly id: CodecTypes['pg/text@1']['input'];
+      readonly membershipId: CodecTypes['pg/text@1']['input'] | null;
+      readonly membershipType: CodecTypes['pg/text@1']['input'] | null;
       readonly organization: CodecTypes['pg/text@1']['input'];
       readonly role: CodecTypes['pg/text@1']['input'] | null;
       readonly sortOrder: CodecTypes['pg/int4@1']['input'];
@@ -1191,6 +1195,8 @@ export type StorageColumnTypes = {
       readonly description: CodecTypes['pg/text@1']['output'] | null;
       readonly endDate: TimestampString<3> | null;
       readonly id: CodecTypes['pg/text@1']['output'];
+      readonly membershipId: CodecTypes['pg/text@1']['output'] | null;
+      readonly membershipType: CodecTypes['pg/text@1']['output'] | null;
       readonly organization: CodecTypes['pg/text@1']['output'];
       readonly role: CodecTypes['pg/text@1']['output'] | null;
       readonly sortOrder: CodecTypes['pg/int4@1']['output'];
@@ -1584,6 +1590,8 @@ export type StorageColumnInputTypes = {
       readonly description: CodecTypes['pg/text@1']['input'] | null;
       readonly endDate: CodecTypes['pg/timestamp-string@1']['input'] | null;
       readonly id: CodecTypes['pg/text@1']['input'];
+      readonly membershipId: CodecTypes['pg/text@1']['input'] | null;
+      readonly membershipType: CodecTypes['pg/text@1']['input'] | null;
       readonly organization: CodecTypes['pg/text@1']['input'];
       readonly role: CodecTypes['pg/text@1']['input'] | null;
       readonly sortOrder: CodecTypes['pg/int4@1']['input'];
@@ -2052,6 +2060,8 @@ export namespace Models {
     description: CodecTypes['pg/text@1']['output'] | null;
     endDate: TimestampString<3> | null;
     id: CodecTypes['pg/text@1']['output'];
+    membershipId: CodecTypes['pg/text@1']['output'] | null;
+    membershipType: CodecTypes['pg/text@1']['output'] | null;
     organization: CodecTypes['pg/text@1']['output'];
     role: CodecTypes['pg/text@1']['output'] | null;
     sortOrder: CodecTypes['pg/int4@1']['output'];
@@ -3741,6 +3751,18 @@ type ContractBase = Omit<
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly membershipId: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly membershipType: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
                   readonly many: false;
                 };
                 readonly organization: {
@@ -6987,6 +7009,14 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly membershipId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly membershipType: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly organization: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -7041,6 +7071,8 @@ type ContractBase = Omit<
                 readonly description: { readonly column: 'description' };
                 readonly endDate: { readonly column: 'endDate' };
                 readonly id: { readonly column: 'id' };
+                readonly membershipId: { readonly column: 'membershipId' };
+                readonly membershipType: { readonly column: 'membershipType' };
                 readonly organization: { readonly column: 'organization' };
                 readonly role: { readonly column: 'role' };
                 readonly sortOrder: { readonly column: 'sortOrder' };

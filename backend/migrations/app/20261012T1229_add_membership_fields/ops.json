@@ -1,0 +1,86 @@
+[
+  {
+    "id": "column.public.Membership.membershipId",
+    "label": "Add column \"membershipId\" to \"Membership\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "membershipId",
+        "table": "Membership"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"membershipId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Membership",
+          "membershipId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"membershipId\"",
+        "sql": "ALTER TABLE \"public\".\"Membership\" ADD COLUMN \"membershipId\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"membershipId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Membership",
+          "membershipId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Membership.membershipType",
+    "label": "Add column \"membershipType\" to \"Membership\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "membershipType",
+        "table": "Membership"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"membershipType\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Membership",
+          "membershipType"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"membershipType\"",
+        "sql": "ALTER TABLE \"public\".\"Membership\" ADD COLUMN \"membershipType\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"membershipType\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Membership",
+          "membershipType"
+        ]
+      }
+    ]
+  }
+]

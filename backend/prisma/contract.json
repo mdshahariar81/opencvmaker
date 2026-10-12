@@ -2375,6 +2375,20 @@
                   "kind": "scalar"
                 }
               },
+              "membershipId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "membershipType": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "organization": {
                 "nullable": false,
                 "type": {
@@ -2461,6 +2475,12 @@
                 },
                 "id": {
                   "column": "id"
+                },
+                "membershipId": {
+                  "column": "membershipId"
+                },
+                "membershipType": {
+                  "column": "membershipType"
                 },
                 "organization": {
                   "column": "organization"
@@ -6574,6 +6594,16 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
+                "membershipId": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
+                "membershipType": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
                 "organization": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
@@ -8523,7 +8553,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "0680811b8148fc4d84baaec2390755da26645af7c4cdb2e0f7dd07702e8316de"
+    "storageHash": "a36f26a1473d432de17450bdda7c413292d8c254edba65cb137dbf842b5e3b28"
   },
   "execution": {
     "executionHash": "7e5a3ce6686839f46b1cf08d0c5d1b51d99f567e873478d9f074689fa1fd28a1",
