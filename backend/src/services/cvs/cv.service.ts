@@ -34,7 +34,6 @@ export const cvService = {
       data?: unknown;
     },
   ) {
-    // Verify the selected template when one is provided.
     if (input.templateId) {
       const template = await db.orm.public.Template
         .where({ id: input.templateId })
@@ -45,13 +44,10 @@ export const cvService = {
       }
     }
 
-    // Convert incoming CV data into the JSON type
-    // expected by the Prisma 8 ORM contract.
     const cvData: JsonValue = input.data
       ? (input.data as JsonValue)
       : {};
 
-    // Create the CV owned by the authenticated user.
     return db.orm.public.CV.create({
       userId,
       title: input.title,
@@ -71,8 +67,6 @@ export const cvService = {
 
   /**
    * Get a single CV owned by a user.
-   *
-   * Ownership is enforced directly in the query.
    */
   async getCVById(userId: string, cvId: string) {
     const cv = await db.orm.public.CV
@@ -87,6 +81,99 @@ export const cvService = {
     }
 
     return cv;
+  },
+
+  /**
+   * Get the complete CV with all related sections.
+   */
+  async getFullCV(userId: string, cvId: string) {
+    // Verify that the CV belongs to the authenticated user.
+    const cv = await db.orm.public.CV
+      .where({
+        id: cvId,
+        userId,
+      })
+      .first();
+
+    if (!cv) {
+      throw new AppError("CV not found", 404);
+    }
+
+    // Load all CV sections in parallel.
+    const [
+      personalInformation,
+      summary,
+      education,
+      workExperience,
+      skills,
+      projects,
+      certifications,
+      languages,
+      awards,
+      volunteerExperience,
+      publications,
+      conferences,
+      courses,
+      memberships,
+      teachingExperience,
+      leadershipExperience,
+      activities,
+      patents,
+      interests,
+      references,
+      customSections,
+      sectionSettings,
+    ] = await Promise.all([
+      db.orm.public.PersonalInformation.where({ cvId }).first(),
+      db.orm.public.ProfessionalSummary.where({ cvId }).first(),
+      db.orm.public.Education.where({ cvId }).all(),
+      db.orm.public.WorkExperience.where({ cvId }).all(),
+      db.orm.public.Skill.where({ cvId }).all(),
+      db.orm.public.Project.where({ cvId }).all(),
+      db.orm.public.Certification.where({ cvId }).all(),
+      db.orm.public.Language.where({ cvId }).all(),
+      db.orm.public.Award.where({ cvId }).all(),
+      db.orm.public.VolunteerExperience.where({ cvId }).all(),
+      db.orm.public.Publication.where({ cvId }).all(),
+      db.orm.public.Conference.where({ cvId }).all(),
+      db.orm.public.Course.where({ cvId }).all(),
+      db.orm.public.Membership.where({ cvId }).all(),
+      db.orm.public.TeachingExperience.where({ cvId }).all(),
+      db.orm.public.LeadershipExperience.where({ cvId }).all(),
+      db.orm.public.ExtracurricularActivity.where({ cvId }).all(),
+      db.orm.public.Patent.where({ cvId }).all(),
+      db.orm.public.Interest.where({ cvId }).all(),
+      db.orm.public.Reference.where({ cvId }).all(),
+      db.orm.public.CustomSection.where({ cvId }).all(),
+      db.orm.public.CVSectionSetting.where({ cvId }).all(),
+    ]);
+
+    // Return the CV together with all of its sections.
+    return {
+      ...cv,
+      personalInformation,
+      summary,
+      education,
+      workExperience,
+      skills,
+      projects,
+      certifications,
+      languages,
+      awards,
+      volunteerExperience,
+      publications,
+      conferences,
+      courses,
+      memberships,
+      teachingExperience,
+      leadershipExperience,
+      activities,
+      patents,
+      interests,
+      references,
+      customSections,
+      sectionSettings,
+    };
   },
 
   /**
@@ -127,12 +214,6 @@ export const cvService = {
       }
     }
 
-    /**
-     * Build update data.
-     *
-     * Only include JSON data when the client
-     * actually sends it.
-     */
     const updateData = {
       title: input.title,
       templateId: input.templateId,
@@ -146,7 +227,6 @@ export const cvService = {
       version: existingCV.version + 1,
     };
 
-    // Update only the already verified CV.
     return db.orm.public.CV
       .where({ id: cvId })
       .update(updateData);
@@ -168,7 +248,6 @@ export const cvService = {
       throw new AppError("CV not found", 404);
     }
 
-    // Delete only the verified CV.
     await db.orm.public.CV
       .where({ id: cvId })
       .delete();
