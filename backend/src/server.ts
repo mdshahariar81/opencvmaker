@@ -30,6 +30,7 @@ import { languageRoutes } from "./routes/cvs/language.routes.js";
 import { awardRoutes } from "./routes/cvs/award.routes.js";
 import { volunteerExperienceRoutes } from "./routes/cvs/volunteer-experience.routes.js";
 import { publicationRoutes } from "./routes/cvs/publication.routes.js";
+import { conferenceRoutes } from "./routes/cvs/conference.routes.js";
 
 /**
  * Create Fastify application.
@@ -102,6 +103,7 @@ await app.register(languageRoutes);
 await app.register(awardRoutes);
 await app.register(volunteerExperienceRoutes);
 await app.register(publicationRoutes);
+await app.register(conferenceRoutes);
 
 /**
  * Start the Fastify server.
