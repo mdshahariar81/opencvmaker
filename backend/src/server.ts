@@ -22,6 +22,8 @@ import { leadershipExperienceRoutes } from "./routes/cvs/leadership-experience.r
 import { extracurricularActivityRoutes } from "./routes/cvs/extracurricular-activity.routes.js";
 import { patentRoutes } from "./routes/cvs/patent.routes.js";
 import { interestRoutes } from "./routes/cvs/interest.routes.js";
+import { customSectionRoutes } from "./routes/cvs/custom-section.routes.js";
+import { referenceRoutes } from "./routes/cvs/reference.routes.js";
 import { teachingExperienceRoutes } from "./routes/cvs/teaching-experience.routes.js";
 import { membershipRoutes } from "./routes/cvs/membership.routes.js";
 import { cvRoutes } from "./routes/cvs/cv.routes.js";
@@ -118,6 +120,8 @@ await app.register(leadershipExperienceRoutes);
 await app.register(extracurricularActivityRoutes);
 await app.register(patentRoutes);
 await app.register(interestRoutes);
+await app.register(customSectionRoutes);
+await app.register(referenceRoutes);
 
 /**
  * Start the Fastify server.
