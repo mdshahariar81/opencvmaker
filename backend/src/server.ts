@@ -18,6 +18,7 @@ import { userRoutes } from "./routes/users/user.routes.js";
 import { authRoutes } from "./routes/auth/auth.routes.js";
 
 // CV routes
+import { cvExportRoutes } from "./routes/cvs/cv-export.routes.js";
 import { cvPublicRoutes } from "./routes/cvs/cv-public.routes.js";
 import { cvStatusRoutes } from "./routes/cvs/cv-status.routes.js";
 import { cvVersionRoutes } from "./routes/cvs/cv-version.routes.js";
@@ -130,6 +131,7 @@ await app.register(cvSectionSettingRoutes);
 await app.register(cvVersionRoutes);
 await app.register(cvStatusRoutes);
 await app.register(cvPublicRoutes);
+await app.register(cvExportRoutes);
 
 
 /**
