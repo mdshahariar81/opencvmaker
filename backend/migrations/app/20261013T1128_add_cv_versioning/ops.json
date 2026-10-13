@@ -1,0 +1,161 @@
+[
+  {
+    "id": "table.CVVersion",
+    "label": "Create table \"CVVersion\"",
+    "summary": "Creates table \"CVVersion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "CVVersion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"CVVersion\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"CVVersion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"CVVersion\"",
+        "sql": "CREATE TABLE \"public\".\"CVVersion\" (\n  \"createdAt\" timestamp(3) DEFAULT (now()) NOT NULL,\n  \"cvId\" text NOT NULL,\n  \"data\" jsonb NOT NULL,\n  \"id\" text NOT NULL,\n  \"version\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"CVVersion\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"CVVersion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.CVVersion.CVVersion_cvId_idx",
+    "label": "Create index \"CVVersion_cvId_idx\" on \"CVVersion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "CVVersion_cvId_idx",
+        "table": "CVVersion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"CVVersion_cvId_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"CVVersion_cvId_idx\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"CVVersion_cvId_idx\"",
+        "sql": "CREATE INDEX \"CVVersion_cvId_idx\" ON \"public\".\"CVVersion\" (\"cvId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"CVVersion_cvId_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"CVVersion_cvId_idx\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.CVVersion.CVVersion_cvId_version_key",
+    "label": "Create index \"CVVersion_cvId_version_key\" on \"CVVersion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "CVVersion_cvId_version_key",
+        "table": "CVVersion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"CVVersion_cvId_version_key\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"CVVersion_cvId_version_key\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"CVVersion_cvId_version_key\"",
+        "sql": "CREATE UNIQUE INDEX \"CVVersion_cvId_version_key\" ON \"public\".\"CVVersion\" (\"cvId\", \"version\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"CVVersion_cvId_version_key\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"CVVersion_cvId_version_key\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.CVVersion.CVVersion_cvId_fkey",
+    "label": "Add foreign key \"CVVersion_cvId_fkey\" on \"CVVersion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "CVVersion_cvId_fkey",
+        "table": "CVVersion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"CVVersion_cvId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "CVVersion_cvId_fkey",
+          "public",
+          "\"public\".\"CVVersion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"CVVersion_cvId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"CVVersion\"\nADD CONSTRAINT \"CVVersion_cvId_fkey\"\nFOREIGN KEY (\"cvId\")\nREFERENCES \"public\".\"CV\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"CVVersion_cvId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "CVVersion_cvId_fkey",
+          "public",
+          "\"public\".\"CVVersion\""
+        ]
+      }
+    ]
+  }
+]

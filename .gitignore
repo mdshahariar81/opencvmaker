@@ -69,3 +69,6 @@ pnpm-debug.log*
 
 # Turbo
 .turbo/
+
+# Local Prisma working directory
+.backend/

@@ -21,9 +21,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'a36f26a1473d432de17450bdda7c413292d8c254edba65cb137dbf842b5e3b28'>;
+  StorageHashBase<'125795c6be269c11489c4c6de406fabcc681c445f4c03d34f4c5efef6b11dc1c'>;
 export type ExecutionHash =
-  ExecutionHashBase<'7e5a3ce6686839f46b1cf08d0c5d1b51d99f567e873478d9f074689fa1fd28a1'>;
+  ExecutionHashBase<'55123616c0a554ea2a747ce06f279f6e196b10d6cdc2726d850f00ef38432d35'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -334,6 +334,13 @@ export type FieldOutputTypes = {
       readonly sectionKey: CodecTypes['pg/text@1']['output'];
       readonly sortOrder: CodecTypes['pg/int4@1']['output'];
       readonly updatedAt: TimestampString<3>;
+    };
+    readonly CVVersion: {
+      readonly createdAt: TimestampString<3>;
+      readonly cvId: CodecTypes['pg/text@1']['output'];
+      readonly data: CodecTypes['pg/jsonb@1']['output'];
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly version: CodecTypes['pg/int4@1']['output'];
     };
     readonly Education: {
       readonly createdAt: TimestampString<3>;
@@ -730,6 +737,13 @@ export type FieldInputTypes = {
       readonly sortOrder: CodecTypes['pg/int4@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamp-string@1']['input'];
     };
+    readonly CVVersion: {
+      readonly createdAt: CodecTypes['pg/timestamp-string@1']['input'];
+      readonly cvId: CodecTypes['pg/text@1']['input'];
+      readonly data: CodecTypes['pg/jsonb@1']['input'];
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly version: CodecTypes['pg/int4@1']['input'];
+    };
     readonly Education: {
       readonly createdAt: CodecTypes['pg/timestamp-string@1']['input'];
       readonly current: CodecTypes['pg/bool@1']['input'];
@@ -1124,6 +1138,13 @@ export type StorageColumnTypes = {
       readonly sectionKey: CodecTypes['pg/text@1']['output'];
       readonly sortOrder: CodecTypes['pg/int4@1']['output'];
       readonly updatedAt: TimestampString<3>;
+    };
+    readonly CVVersion: {
+      readonly createdAt: TimestampString<3>;
+      readonly cvId: CodecTypes['pg/text@1']['output'];
+      readonly data: CodecTypes['pg/jsonb@1']['output'];
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly version: CodecTypes['pg/int4@1']['output'];
     };
     readonly Education: {
       readonly createdAt: TimestampString<3>;
@@ -1520,6 +1541,13 @@ export type StorageColumnInputTypes = {
       readonly sortOrder: CodecTypes['pg/int4@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamp-string@1']['input'];
     };
+    readonly CVVersion: {
+      readonly createdAt: CodecTypes['pg/timestamp-string@1']['input'];
+      readonly cvId: CodecTypes['pg/text@1']['input'];
+      readonly data: CodecTypes['pg/jsonb@1']['input'];
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly version: CodecTypes['pg/int4@1']['input'];
+    };
     readonly Education: {
       readonly createdAt: CodecTypes['pg/timestamp-string@1']['input'];
       readonly current: CodecTypes['pg/bool@1']['input'];
@@ -1867,6 +1895,7 @@ export namespace Models {
     teachingExperience: public_TeachingExperience[];
     template: public_Template | null;
     user: public_User;
+    versions: public_CVVersion[];
     volunteerExperience: public_VolunteerExperience[];
     workExperience: public_WorkExperience[];
     readonly [RelationKeys]?:
@@ -1893,6 +1922,7 @@ export namespace Models {
       | 'teachingExperience'
       | 'template'
       | 'user'
+      | 'versions'
       | 'volunteerExperience'
       | 'workExperience';
   };
@@ -1914,6 +1944,15 @@ export namespace Models {
     sectionKey: CodecTypes['pg/text@1']['output'];
     sortOrder: CodecTypes['pg/int4@1']['output'];
     updatedAt: TimestampString<3>;
+    cv: public_CV;
+    readonly [RelationKeys]?: 'cv';
+  };
+  export type public_CVVersion = {
+    createdAt: TimestampString<3>;
+    cvId: CodecTypes['pg/text@1']['output'];
+    data: CodecTypes['pg/jsonb@1']['output'];
+    id: CodecTypes['pg/text@1']['output'];
+    version: CodecTypes['pg/int4@1']['output'];
     cv: public_CV;
     readonly [RelationKeys]?: 'cv';
   };
@@ -2326,6 +2365,7 @@ export declare const models: {
     CV: Models.public_CV;
     CVExport: Models.public_CVExport;
     CVSectionSetting: Models.public_CVSectionSetting;
+    CVVersion: Models.public_CVVersion;
     Certification: Models.public_Certification;
     Conference: Models.public_Conference;
     Course: Models.public_Course;
@@ -3182,6 +3222,70 @@ type ContractBase = Omit<
                   readonly source: {
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'CVSectionSetting';
+                    readonly columns: readonly ['cvId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'CV';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly CVVersion: {
+              columns: {
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamp';
+                  readonly codecId: 'pg/timestamp-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+                readonly cvId: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly data: {
+                  readonly dataType: 'pg/jsonb';
+                  readonly codecId: 'pg/jsonb@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly version: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'CVVersion_cvId_idx';
+                  readonly columns: readonly ['cvId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'CVVersion_cvId_version_key';
+                  readonly columns: readonly ['cvId', 'version'];
+                  readonly unique: true;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'CVVersion';
                     readonly columns: readonly ['cvId'];
                   };
                   readonly target: {
@@ -5521,6 +5625,7 @@ type ContractBase = Omit<
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'CVSectionSetting';
     };
+    readonly CVVersion: { readonly namespace: 'public' & NamespaceId; readonly model: 'CVVersion' };
     readonly Certification: {
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'Certification';
@@ -6376,6 +6481,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly versions: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'CVVersion';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['cvId'];
+                };
+              };
               readonly volunteerExperience: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -6538,6 +6654,56 @@ type ContractBase = Omit<
                 readonly sectionKey: { readonly column: 'sectionKey' };
                 readonly sortOrder: { readonly column: 'sortOrder' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
+          readonly CVVersion: {
+            readonly fields: {
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamp-string@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+              readonly cvId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly data: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly version: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+            };
+            readonly relations: {
+              readonly cv: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'CV' };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['cvId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'CVVersion';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly cvId: { readonly column: 'cvId' };
+                readonly data: { readonly column: 'data' };
+                readonly id: { readonly column: 'id' };
+                readonly version: { readonly column: 'version' };
               };
             };
           };
@@ -8629,6 +8795,14 @@ type ContractBase = Omit<
           readonly ref: {
             readonly entry: 'CVSectionSetting';
             readonly field: 'updatedAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'cuid2'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'CVVersion';
+            readonly field: 'id';
             readonly namespace: 'public';
           };
         },

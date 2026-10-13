@@ -185,6 +185,9 @@ model CV {
   // Section visibility and ordering.
   sectionSettings      CVSectionSetting[]
 
+  // Version history / autosave snapshots.
+  versions             CVVersion[]
+
   // Export history.
   exports              CVExport[]
 
@@ -908,5 +911,26 @@ model UsageRecord {
 
   @@index([userId])
   @@index([userId, type])
+  @@index([cvId])
+}
+
+// ============================================================
+// CV VERSION HISTORY
+// ============================================================
+model CVVersion {
+  id        String   @id @default(cuid())
+  cvId      String
+
+  // Sequential version number for this CV.
+  version   Int
+
+  // Complete CV snapshot at this version.
+  data      Json
+
+  createdAt DateTime @default(now())
+
+  cv        CV       @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@unique([cvId, version])
   @@index([cvId])
 }
