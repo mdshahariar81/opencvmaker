@@ -18,6 +18,7 @@ import { userRoutes } from "./routes/users/user.routes.js";
 import { authRoutes } from "./routes/auth/auth.routes.js";
 
 // CV routes
+import { cvVersionRoutes } from "./routes/cvs/cv-version.routes.js";
 import { cvSectionSettingRoutes } from "./routes/cvs/cv-section-setting.routes.js";
 import { cvFullRoutes } from "./routes/cvs/cv-full.routes.js";
 import { leadershipExperienceRoutes } from "./routes/cvs/leadership-experience.routes.js";
@@ -100,9 +101,7 @@ await app.register(jwtPlugin);
 await app.register(healthRoute);
 await app.register(userRoutes);
 await app.register(authRoutes);
-
 await app.register(cvRoutes);
-
 await app.register(personalInformationRoutes);
 await app.register(professionalSummaryRoutes);
 await app.register(educationRoutes);
@@ -126,6 +125,7 @@ await app.register(customSectionRoutes);
 await app.register(referenceRoutes);
 await app.register(cvFullRoutes);
 await app.register(cvSectionSettingRoutes);
+await app.register(cvVersionRoutes);
 
 /**
  * Start the Fastify server.
