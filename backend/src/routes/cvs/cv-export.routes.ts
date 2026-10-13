@@ -11,11 +11,14 @@ import { cvIdParamSchema } from "../../validation/cv/cv.schema.js";
 /**
  * CV Export Routes
  *
- * Handles creation and management of CV export records.
+ * Handles CV export creation, listing, downloading,
+ * viewing, and deletion.
  */
 export async function cvExportRoutes(app: FastifyInstance) {
   /**
    * Create a CV export.
+   *
+   * POST /cvs/:id/exports
    */
   app.post(
     "/cvs/:id/exports",
@@ -46,6 +49,8 @@ export async function cvExportRoutes(app: FastifyInstance) {
 
   /**
    * Get all exports for a CV.
+   *
+   * GET /cvs/:id/exports
    */
   app.get(
     "/cvs/:id/exports",
@@ -71,7 +76,60 @@ export async function cvExportRoutes(app: FastifyInstance) {
   );
 
   /**
+   * Download a generated CV export.
+   *
+   * GET /cvs/:id/exports/:exportId/download
+   */
+  app.get(
+    "/cvs/:id/exports/:exportId/download",
+    { preHandler: authenticate },
+    async (request, reply) => {
+      const { id: cvId } = cvIdParamSchema.parse(request.params);
+
+      const { exportId } = cvExportIdParamSchema.parse(
+        request.params,
+      );
+
+      const { sub: userId } = request.user as {
+        sub: string;
+        role: string;
+      };
+
+      const {
+        exportRecord,
+        fileBuffer,
+        fileName,
+      } = await cvExportService.downloadExport(
+        userId,
+        cvId,
+        exportId,
+      );
+
+      if (exportRecord.format === "PDF") {
+        reply.header(
+          "Content-Type",
+          "application/pdf",
+        );
+      }
+
+      reply.header(
+        "Content-Disposition",
+        `attachment; filename="${fileName}"`,
+      );
+
+      reply.header(
+        "Content-Length",
+        fileBuffer.length,
+      );
+
+      return reply.send(fileBuffer);
+    },
+  );
+
+  /**
    * Get one CV export.
+   *
+   * GET /cvs/:id/exports/:exportId
    */
   app.get(
     "/cvs/:id/exports/:exportId",
@@ -103,6 +161,8 @@ export async function cvExportRoutes(app: FastifyInstance) {
 
   /**
    * Delete one CV export.
+   *
+   * DELETE /cvs/:id/exports/:exportId
    */
   app.delete(
     "/cvs/:id/exports/:exportId",

@@ -106,6 +106,40 @@ export async function cvRoutes(app: FastifyInstance) {
   );
 
   /**
+   * Duplicate CV.
+   *
+   * Creates a complete copy of an existing CV,
+   * including all related CV sections.
+   *
+   * POST /cvs/:id/duplicate
+   */
+  app.post(
+    "/cvs/:id/duplicate",
+    {
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      const { id } = cvIdParamSchema.parse(request.params);
+
+      const { sub: userId } = request.user as {
+        sub: string;
+        role: string;
+      };
+
+      const cv = await cvService.duplicateCV(
+        userId,
+        id,
+      );
+
+      return reply.status(201).send({
+        status: "success",
+        message: "CV duplicated successfully",
+        cv,
+      });
+    },
+  );
+
+  /**
    * Update CV.
    *
    * PATCH /cvs/:id
