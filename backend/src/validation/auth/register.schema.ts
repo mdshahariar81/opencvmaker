@@ -12,7 +12,12 @@ export const registerSchema = z.object({
     .string()
     .trim()
     .min(2, "Name must be at least 2 characters")
-    .max(100, "Name must not exceed 100 characters"),
+    .max(100, "Name must not exceed 100 characters")
+    // Allow normal human names while rejecting HTML-like markup.
+    .regex(
+      /^[\p{L}\p{M}][\p{L}\p{M} .'-]*$/u,
+      "Name contains invalid characters",
+    ),
 
   email: z
     .string()

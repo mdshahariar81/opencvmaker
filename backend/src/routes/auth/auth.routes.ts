@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import rateLimit from "@fastify/rate-limit";
 
 import { authService } from "../../services/auth/auth.service.js";
 import { loginService } from "../../services/auth/login.service.js";
@@ -17,6 +18,16 @@ import { registerSchema } from "../../validation/auth/register.schema.js";
  */
 export async function authRoutes(app: FastifyInstance) {
   /**
+   * Enable rate limiting for selected authentication routes.
+   *
+   * Global rate limiting is disabled so normal API usage
+   * is not affected by authentication-specific limits.
+   */
+  await app.register(rateLimit, {
+    global: false,
+  });
+
+  /**
    * GET /auth/status
    *
    * Simple authentication route health check.
@@ -32,56 +43,86 @@ export async function authRoutes(app: FastifyInstance) {
    * POST /auth/register
    *
    * Creates a new user account.
+   *
+   * Security:
+   * Limit repeated registration attempts from the same IP
+   * to reduce automated account-creation abuse.
    */
-  app.post("/auth/register", async (request, reply) => {
-    // Validate and normalize the incoming request body.
-    const input = registerSchema.parse(request.body);
+  app.post(
+    "/auth/register",
+    {
+      config: {
+        rateLimit: {
+          max: 5,
+          timeWindow: "15 minutes",
+        },
+      },
+    },
+    async (request, reply) => {
+      // Validate and normalize the incoming request body.
+      const input = registerSchema.parse(request.body);
 
-    // Create the user through the authentication service.
-    const user = await authService.register(input);
+      // Create the user through the authentication service.
+      const user = await authService.register(input);
 
-    // Return safe user information.
-    return reply.status(201).send({
-      status: "success",
-      message: "Account created successfully",
-      user,
-    });
-  });
+      // Return safe user information.
+      return reply.status(201).send({
+        status: "success",
+        message: "Account created successfully",
+        user,
+      });
+    },
+  );
 
   /**
    * POST /auth/login
    *
    * Authenticates an existing user.
+   *
+   * Security:
+   * Limit repeated login attempts from the same IP
+   * to reduce brute-force password attacks.
    */
-  app.post("/auth/login", async (request, reply) => {
-    // Validate and normalize login credentials.
-    const input = loginSchema.parse(request.body);
+  app.post(
+    "/auth/login",
+    {
+      config: {
+        rateLimit: {
+          max: 5,
+          timeWindow: "15 minutes",
+        },
+      },
+    },
+    async (request, reply) => {
+      // Validate and normalize login credentials.
+      const input = loginSchema.parse(request.body);
 
-    // Verify email and password.
-    const user = await loginService.login(input);
+      // Verify email and password.
+      const user = await loginService.login(input);
 
-    // Create a short-lived JWT.
-    const token = await app.jwt.sign({
-      sub: user.id,
-      role: user.role,
-    });
+      // Create a short-lived JWT.
+      const token = await app.jwt.sign({
+        sub: user.id,
+        role: user.role,
+      });
 
-    // Store the JWT inside an HTTP-only cookie.
-    reply.setCookie("ocm_access_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 15 * 60,
-    });
+      // Store the JWT inside an HTTP-only cookie.
+      reply.setCookie("ocm_access_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 15 * 60,
+      });
 
-    // Return safe user information.
-    return reply.status(200).send({
-      status: "success",
-      message: "Login successful",
-      user,
-    });
-  });
+      // Return safe user information.
+      return reply.status(200).send({
+        status: "success",
+        message: "Login successful",
+        user,
+      });
+    },
+  );
 
   /**
    * GET /auth/me
