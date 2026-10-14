@@ -11,6 +11,7 @@ import { db } from "../../config/database.js";
 import { AppError } from "../../errors/app-error.js";
 import type { CreateCVExportInput } from "../../validation/cv/cv-export.schema.js";
 import { generateCVDocx } from "./docx-generator.service.js";
+import { generateCVJpg } from "./jpg-generator.service.js";
 import { generateCVPdf } from "./pdf-generator.service.js";
 
 export const cvExportService = {
@@ -36,7 +37,10 @@ export const cvExportService = {
   /**
    * Create a CV export.
    *
-   * PDF and DOCX generation are supported.
+   * Supported formats:
+   * - PDF
+   * - DOCX
+   * - JPG
    */
   async createExport(
     userId: string,
@@ -108,7 +112,9 @@ export const cvExportService = {
         .orderBy((item) => item.sortOrder.asc())
         .all(),
 
-      db.orm.public.VolunteerExperience.where({ cvId })
+      db.orm.public.VolunteerExperience.where({
+        cvId,
+      })
         .orderBy((item) => item.sortOrder.asc())
         .all(),
 
@@ -128,11 +134,15 @@ export const cvExportService = {
         .orderBy((item) => item.sortOrder.asc())
         .all(),
 
-      db.orm.public.TeachingExperience.where({ cvId })
+      db.orm.public.TeachingExperience.where({
+        cvId,
+      })
         .orderBy((item) => item.sortOrder.asc())
         .all(),
 
-      db.orm.public.LeadershipExperience.where({ cvId })
+      db.orm.public.LeadershipExperience.where({
+        cvId,
+      })
         .orderBy((item) => item.sortOrder.asc())
         .all(),
 
@@ -158,7 +168,9 @@ export const cvExportService = {
         .orderBy((item) => item.sortOrder.asc())
         .all(),
 
-      db.orm.public.CVSectionSetting.where({ cvId })
+      db.orm.public.CVSectionSetting.where({
+        cvId,
+      })
         .orderBy((item) => item.sortOrder.asc())
         .all(),
     ]);
@@ -166,8 +178,8 @@ export const cvExportService = {
     /**
      * Build a complete CV snapshot.
      *
-     * The same snapshot is used by both
-     * PDF and DOCX generators.
+     * The same snapshot is used by all
+     * export generators.
      */
     const snapshot = {
       cv: {
@@ -210,11 +222,10 @@ export const cvExportService = {
     const generatedBuffer =
       input.format === "PDF"
         ? await generateCVPdf(snapshot)
-        : await generateCVDocx(snapshot);
+        : input.format === "DOCX"
+          ? await generateCVDocx(snapshot)
+          : await generateCVJpg(snapshot);
 
-    /**
-     * Create the local export directory.
-     */
     const exportDirectory = path.resolve(
       process.cwd(),
       "storage",
@@ -231,7 +242,9 @@ export const cvExportService = {
     const extension =
       input.format === "PDF"
         ? "pdf"
-        : "docx";
+        : input.format === "DOCX"
+          ? "docx"
+          : "jpg";
 
     /**
      * Generate a unique filename.
@@ -365,7 +378,8 @@ export const cvExportService = {
     }
 
     /**
-     * Only use the filename portion of the stored URL.
+     * Only use the filename portion of
+     * the stored URL.
      *
      * This prevents filesystem path traversal.
      */
@@ -374,13 +388,15 @@ export const cvExportService = {
     );
 
     /**
-     * PDF and DOCX downloads are supported.
+     * PDF, DOCX and JPG downloads are supported.
      */
     const supportedFile =
       (exportRecord.format === "PDF" &&
         fileName.endsWith(".pdf")) ||
       (exportRecord.format === "DOCX" &&
-        fileName.endsWith(".docx"));
+        fileName.endsWith(".docx")) ||
+      (exportRecord.format === "JPG" &&
+        fileName.endsWith(".jpg"));
 
     if (!supportedFile) {
       throw new AppError(

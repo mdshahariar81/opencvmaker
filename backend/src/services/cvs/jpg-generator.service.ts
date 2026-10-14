@@ -27,200 +27,140 @@ type CVSnapshot = {
   customSections?: any[];
 };
 
-function escapeHtml(value: unknown): string {
+function escapeXml(value: unknown): string {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(/'/g, "&apos;");
 }
 
-function clean(value: unknown): string {
+function text(value: unknown): string {
   return String(value ?? "").trim();
 }
 
-function section(
-  title: string,
-  content: string,
-): string {
-  if (!content.trim()) {
-    return "";
-  }
-
-  return `
-    <div class="section">
-      <h2>${escapeHtml(title)}</h2>
-      ${content}
-    </div>
-  `;
-}
-
-function field(
-  label: string,
+function addText(
+  lines: string[],
   value: unknown,
-): string {
-  const content = clean(value);
+  x: number,
+  y: number,
+  size = 18,
+  weight = 400,
+): number {
+  const content = text(value);
 
   if (!content) {
-    return "";
+    return y;
   }
 
-  return `
-    <div class="field">
-      <strong>${escapeHtml(label)}:</strong>
-      ${escapeHtml(content)}
-    </div>
-  `;
+  lines.push(
+    `<text x="${x}" y="${y}" font-family="Arial, Helvetica, sans-serif" font-size="${size}" font-weight="${weight}" fill="#222222">${escapeXml(content)}</text>`,
+  );
+
+  return y + size + 12;
 }
 
-function item(
-  title: unknown,
-  details: string,
-): string {
-  const heading = clean(title);
+function addSectionTitle(
+  lines: string[],
+  title: string,
+  y: number,
+): number {
+  lines.push(
+    `<text x="80" y="${y}" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#111111">${escapeXml(title.toUpperCase())}</text>`,
+  );
 
-  return `
-    <div class="item">
-      ${
-        heading
-          ? `<h3>${escapeHtml(heading)}</h3>`
-          : ""
-      }
-      ${details}
-    </div>
-  `;
+  y += 12;
+
+  lines.push(
+    `<line x1="80" y1="${y}" x2="1160" y2="${y}" stroke="#222222" stroke-width="2"/>`,
+  );
+
+  return y + 34;
+}
+
+function addField(
+  lines: string[],
+  label: string,
+  value: unknown,
+  y: number,
+): number {
+  const content = text(value);
+
+  if (!content) {
+    return y;
+  }
+
+  lines.push(
+    `<text x="80" y="${y}" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#222222"><tspan font-weight="700">${escapeXml(label)}:</tspan><tspan> ${escapeXml(content)}</tspan></text>`,
+  );
+
+  return y + 28;
+}
+
+function addBullet(
+  lines: string[],
+  value: unknown,
+  y: number,
+): number {
+  const content = text(value);
+
+  if (!content) {
+    return y;
+  }
+
+  lines.push(
+    `<text x="95" y="${y}" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#222222">• ${escapeXml(content)}</text>`,
+  );
+
+  return y + 28;
 }
 
 export async function generateCVJpg(
   snapshot: CVSnapshot,
 ): Promise<Buffer> {
+  const lines: string[] = [];
+
+  let y = 75;
+
   const personal =
     snapshot.personalInformation;
 
   const fullName =
-    clean(personal?.fullName) ||
-    clean(personal?.name) ||
+    text(personal?.fullName) ||
+    text(personal?.name) ||
     "Resume";
 
+  /**
+   * Header
+   */
+  lines.push(
+    `<text x="620" y="${y}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="700" fill="#111111">${escapeXml(fullName)}</text>`,
+  );
+
+  y += 55;
+
   const contact = [
-    clean(personal?.email),
-    clean(personal?.phone),
-    clean(personal?.location),
-    clean(personal?.website),
-    clean(personal?.linkedin),
-    clean(personal?.github),
+    text(personal?.email),
+    text(personal?.phone),
+    text(personal?.location),
+    text(personal?.website),
+    text(personal?.linkedin),
+    text(personal?.github),
   ].filter(Boolean);
 
-  let html = `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8" />
+  if (contact.length) {
+    lines.push(
+      `<text x="620" y="${y}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" fill="#555555">${contact
+        .map(escapeXml)
+        .join("  |  ")}</text>`,
+    );
 
-<style>
-  * {
-    box-sizing: border-box;
+    y += 35;
   }
-
-  body {
-    margin: 0;
-    padding: 0;
-    background: #ffffff;
-    color: #222222;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 18px;
-    line-height: 1.5;
-  }
-
-  .page {
-    width: 794px;
-    min-height: 1123px;
-    padding: 58px 64px;
-    background: #ffffff;
-  }
-
-  .header {
-    text-align: center;
-    margin-bottom: 30px;
-  }
-
-  .name {
-    margin: 0 0 8px;
-    font-size: 38px;
-    line-height: 1.15;
-    font-weight: 700;
-  }
-
-  .contact {
-    color: #555555;
-    font-size: 15px;
-    line-height: 1.7;
-  }
-
-  .section {
-    margin-top: 26px;
-  }
-
-  .section h2 {
-    margin: 0 0 12px;
-    padding-bottom: 6px;
-    border-bottom: 2px solid #222222;
-    font-size: 21px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .field {
-    margin: 4px 0;
-  }
-
-  .item {
-    margin-bottom: 16px;
-  }
-
-  .item h3 {
-    margin: 0 0 5px;
-    font-size: 18px;
-  }
-
-  .description {
-    margin: 4px 0;
-  }
-
-  ul {
-    margin: 5px 0 0 20px;
-    padding: 0;
-  }
-
-  li {
-    margin-bottom: 4px;
-  }
-</style>
-</head>
-
-<body>
-  <div class="page">
-
-    <div class="header">
-      <h1 class="name">
-        ${escapeHtml(fullName)}
-      </h1>
-
-      ${
-        contact.length
-          ? `<div class="contact">
-              ${contact
-                .map(escapeHtml)
-                .join(" &nbsp; | &nbsp; ")}
-            </div>`
-          : ""
-      }
-    </div>
-  `;
 
   /**
-   * Professional summary
+   * Professional Summary
    */
   if (snapshot.summary) {
     const summary =
@@ -228,483 +168,530 @@ export async function generateCVJpg(
       snapshot.summary.summary ??
       snapshot.summary.description;
 
-    html += section(
-      "Professional Summary",
-      `<div class="description">
-        ${escapeHtml(summary)}
-      </div>`,
-    );
+    if (text(summary)) {
+      y = addSectionTitle(
+        lines,
+        "Professional Summary",
+        y,
+      );
+
+      y = addText(
+        lines,
+        summary,
+        80,
+        y,
+        17,
+      );
+
+      y += 12;
+    }
   }
 
   /**
    * Education
    */
   if (snapshot.education?.length) {
-    const content = snapshot.education
-      .map((education) =>
-        item(
-          education.degree ??
-            education.title ??
-            "Education",
-          [
-            field(
-              "Institution",
-              education.institution,
-            ),
-            field(
-              "Field",
-              education.field,
-            ),
-            field(
-              "Location",
-              education.location,
-            ),
-            field(
-              "Description",
-              education.description,
-            ),
-          ].join(""),
-        ),
-      )
-      .join("");
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Education",
-      content,
+      y,
     );
+
+    for (const education of snapshot.education) {
+      y = addText(
+        lines,
+        education.degree ??
+          education.title ??
+          "Education",
+        80,
+        y,
+        19,
+        700,
+      );
+
+      y = addField(
+        lines,
+        "Institution",
+        education.institution,
+        y,
+      );
+
+      y = addField(
+        lines,
+        "Field",
+        education.field,
+        y,
+      );
+
+      y = addField(
+        lines,
+        "Location",
+        education.location,
+        y,
+      );
+
+      y = addField(
+        lines,
+        "Description",
+        education.description,
+        y,
+      );
+
+      y += 10;
+    }
   }
 
   /**
-   * Work experience
+   * Work Experience
    */
   if (snapshot.workExperience?.length) {
-    const content = snapshot.workExperience
-      .map((work) =>
-        item(
-          work.position ??
-            work.jobTitle ??
-            "Work Experience",
-          [
-            field("Company", work.company),
-            field("Location", work.location),
-            field("Start Date", work.startDate),
-            field("End Date", work.endDate),
-            field("Description", work.description),
-          ].join(""),
-        ),
-      )
-      .join("");
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Work Experience",
-      content,
+      y,
     );
+
+    for (const work of snapshot.workExperience) {
+      y = addText(
+        lines,
+        work.position ??
+          work.jobTitle ??
+          "Work Experience",
+        80,
+        y,
+        19,
+        700,
+      );
+
+      y = addField(
+        lines,
+        "Company",
+        work.company,
+        y,
+      );
+
+      y = addField(
+        lines,
+        "Location",
+        work.location,
+        y,
+      );
+
+      y = addField(
+        lines,
+        "Start Date",
+        work.startDate,
+        y,
+      );
+
+      y = addField(
+        lines,
+        "End Date",
+        work.endDate,
+        y,
+      );
+
+      y = addField(
+        lines,
+        "Description",
+        work.description,
+        y,
+      );
+
+      y += 10;
+    }
   }
 
   /**
    * Skills
    */
   if (snapshot.skills?.length) {
-    const content = `
-      <ul>
-        ${snapshot.skills
-          .map(
-            (skill) =>
-              `<li>${escapeHtml(
-                skill.name ??
-                  skill.skill ??
-                  skill.title,
-              )}</li>`,
-          )
-          .join("")}
-      </ul>
-    `;
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Skills",
-      content,
+      y,
     );
+
+    for (const skill of snapshot.skills) {
+      y = addBullet(
+        lines,
+        skill.name ??
+          skill.skill ??
+          skill.title,
+        y,
+      );
+    }
+
+    y += 10;
   }
 
   /**
    * Projects
    */
   if (snapshot.projects?.length) {
-    const content = snapshot.projects
-      .map((project) =>
-        item(
-          project.name ??
-            project.title ??
-            "Project",
-          [
-            field(
-              "Description",
-              project.description,
-            ),
-            field("URL", project.url),
-            field(
-              "Technologies",
-              project.technologies,
-            ),
-          ].join(""),
-        ),
-      )
-      .join("");
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Projects",
-      content,
+      y,
     );
+
+    for (const project of snapshot.projects) {
+      y = addText(
+        lines,
+        project.name ??
+          project.title ??
+          "Project",
+        80,
+        y,
+        19,
+        700,
+      );
+
+      y = addField(
+        lines,
+        "Description",
+        project.description,
+        y,
+      );
+
+      y = addField(
+        lines,
+        "URL",
+        project.url,
+        y,
+      );
+
+      y = addField(
+        lines,
+        "Technologies",
+        project.technologies,
+        y,
+      );
+
+      y += 10;
+    }
   }
 
   /**
    * Certifications
    */
   if (snapshot.certifications?.length) {
-    const content = `
-      <ul>
-        ${snapshot.certifications
-          .map(
-            (certification) =>
-              `<li>${escapeHtml(
-                certification.name ??
-                  certification.title ??
-                  certification.issuer,
-              )}</li>`,
-          )
-          .join("")}
-      </ul>
-    `;
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Certifications",
-      content,
+      y,
     );
+
+    for (const certification of snapshot.certifications) {
+      y = addBullet(
+        lines,
+        certification.name ??
+          certification.title ??
+          certification.issuer,
+        y,
+      );
+    }
+
+    y += 10;
   }
 
   /**
    * Languages
    */
   if (snapshot.languages?.length) {
-    const content = `
-      <ul>
-        ${snapshot.languages
-          .map(
-            (language) =>
-              `<li>${escapeHtml(
-                language.name ??
-                  language.language ??
-                  language.title,
-              )}</li>`,
-          )
-          .join("")}
-      </ul>
-    `;
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Languages",
-      content,
+      y,
     );
+
+    for (const language of snapshot.languages) {
+      y = addBullet(
+        lines,
+        language.name ??
+          language.language ??
+          language.title,
+        y,
+      );
+    }
+
+    y += 10;
   }
 
   /**
    * Awards
    */
   if (snapshot.awards?.length) {
-    const content = `
-      <ul>
-        ${snapshot.awards
-          .map(
-            (award) =>
-              `<li>${escapeHtml(
-                award.title ??
-                  award.name ??
-                  award.description,
-              )}</li>`,
-          )
-          .join("")}
-      </ul>
-    `;
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Awards",
-      content,
+      y,
     );
+
+    for (const award of snapshot.awards) {
+      y = addBullet(
+        lines,
+        award.title ??
+          award.name ??
+          award.description,
+        y,
+      );
+    }
+
+    y += 10;
   }
 
   /**
-   * Volunteer experience
+   * Volunteer Experience
    */
   if (snapshot.volunteerExperience?.length) {
-    const content = `
-      <ul>
-        ${snapshot.volunteerExperience
-          .map(
-            (itemData) =>
-              `<li>${escapeHtml(
-                itemData.organization ??
-                  itemData.role ??
-                  itemData.description,
-              )}</li>`,
-          )
-          .join("")}
-      </ul>
-    `;
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Volunteer Experience",
-      content,
+      y,
     );
+
+    for (const item of snapshot.volunteerExperience) {
+      y = addBullet(
+        lines,
+        item.organization ??
+          item.role ??
+          item.description,
+        y,
+      );
+    }
+
+    y += 10;
   }
 
   /**
    * Publications
    */
   if (snapshot.publications?.length) {
-    const content = `
-      <ul>
-        ${snapshot.publications
-          .map(
-            (publication) =>
-              `<li>${escapeHtml(
-                publication.title ??
-                  publication.name ??
-                  publication.description,
-              )}</li>`,
-          )
-          .join("")}
-      </ul>
-    `;
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Publications",
-      content,
+      y,
     );
+
+    for (const item of snapshot.publications) {
+      y = addBullet(
+        lines,
+        item.title ??
+          item.name ??
+          item.description,
+        y,
+      );
+    }
+
+    y += 10;
   }
 
   /**
    * Conferences
    */
   if (snapshot.conferences?.length) {
-    const content = `
-      <ul>
-        ${snapshot.conferences
-          .map(
-            (conference) =>
-              `<li>${escapeHtml(
-                conference.name ??
-                  conference.title ??
-                  conference.description,
-              )}</li>`,
-          )
-          .join("")}
-      </ul>
-    `;
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Conferences",
-      content,
+      y,
     );
+
+    for (const item of snapshot.conferences) {
+      y = addBullet(
+        lines,
+        item.name ??
+          item.title ??
+          item.description,
+        y,
+      );
+    }
+
+    y += 10;
   }
 
   /**
    * Courses
    */
   if (snapshot.courses?.length) {
-    const content = `
-      <ul>
-        ${snapshot.courses
-          .map(
-            (course) =>
-              `<li>${escapeHtml(
-                course.name ??
-                  course.title ??
-                  course.description,
-              )}</li>`,
-          )
-          .join("")}
-      </ul>
-    `;
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Courses",
-      content,
+      y,
     );
+
+    for (const item of snapshot.courses) {
+      y = addBullet(
+        lines,
+        item.name ??
+          item.title ??
+          item.description,
+        y,
+      );
+    }
+
+    y += 10;
   }
 
   /**
    * Memberships
    */
   if (snapshot.memberships?.length) {
-    const content = `
-      <ul>
-        ${snapshot.memberships
-          .map(
-            (membership) =>
-              `<li>${escapeHtml(
-                membership.organization ??
-                  membership.name ??
-                  membership.title,
-              )}</li>`,
-          )
-          .join("")}
-      </ul>
-    `;
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Memberships",
-      content,
+      y,
     );
+
+    for (const item of snapshot.memberships) {
+      y = addBullet(
+        lines,
+        item.organization ??
+          item.name ??
+          item.title,
+        y,
+      );
+    }
+
+    y += 10;
   }
 
   /**
-   * Teaching experience
+   * Teaching Experience
    */
   if (snapshot.teachingExperience?.length) {
-    const content = `
-      <ul>
-        ${snapshot.teachingExperience
-          .map(
-            (teaching) =>
-              `<li>${escapeHtml(
-                teaching.institution ??
-                  teaching.role ??
-                  teaching.description,
-              )}</li>`,
-          )
-          .join("")}
-      </ul>
-    `;
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Teaching Experience",
-      content,
+      y,
     );
+
+    for (const item of snapshot.teachingExperience) {
+      y = addBullet(
+        lines,
+        item.institution ??
+          item.role ??
+          item.description,
+        y,
+      );
+    }
+
+    y += 10;
   }
 
   /**
-   * Leadership experience
+   * Leadership Experience
    */
   if (snapshot.leadershipExperience?.length) {
-    const content = `
-      <ul>
-        ${snapshot.leadershipExperience
-          .map(
-            (leadership) =>
-              `<li>${escapeHtml(
-                leadership.organization ??
-                  leadership.role ??
-                  leadership.description,
-              )}</li>`,
-          )
-          .join("")}
-      </ul>
-    `;
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Leadership Experience",
-      content,
+      y,
     );
+
+    for (const item of snapshot.leadershipExperience) {
+      y = addBullet(
+        lines,
+        item.organization ??
+          item.role ??
+          item.description,
+        y,
+      );
+    }
+
+    y += 10;
   }
 
   /**
-   * Extracurricular activities
+   * Extracurricular Activities
    */
   if (snapshot.activities?.length) {
-    const content = `
-      <ul>
-        ${snapshot.activities
-          .map(
-            (activity) =>
-              `<li>${escapeHtml(
-                activity.name ??
-                  activity.title ??
-                  activity.description,
-              )}</li>`,
-          )
-          .join("")}
-      </ul>
-    `;
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Extracurricular Activities",
-      content,
+      y,
     );
+
+    for (const item of snapshot.activities) {
+      y = addBullet(
+        lines,
+        item.name ??
+          item.title ??
+          item.description,
+        y,
+      );
+    }
+
+    y += 10;
   }
 
   /**
    * Patents
    */
   if (snapshot.patents?.length) {
-    const content = `
-      <ul>
-        ${snapshot.patents
-          .map(
-            (patent) =>
-              `<li>${escapeHtml(
-                patent.title ??
-                  patent.name ??
-                  patent.description,
-              )}</li>`,
-          )
-          .join("")}
-      </ul>
-    `;
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Patents",
-      content,
+      y,
     );
+
+    for (const item of snapshot.patents) {
+      y = addBullet(
+        lines,
+        item.title ??
+          item.name ??
+          item.description,
+        y,
+      );
+    }
+
+    y += 10;
   }
 
   /**
    * Interests
    */
   if (snapshot.interests?.length) {
-    const content = `
-      <ul>
-        ${snapshot.interests
-          .map(
-            (interest) =>
-              `<li>${escapeHtml(
-                interest.name ??
-                  interest.title ??
-                  interest.description,
-              )}</li>`,
-          )
-          .join("")}
-      </ul>
-    `;
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "Interests",
-      content,
+      y,
     );
+
+    for (const item of snapshot.interests) {
+      y = addBullet(
+        lines,
+        item.name ??
+          item.title ??
+          item.description,
+        y,
+      );
+    }
+
+    y += 10;
   }
 
   /**
    * References
    */
   if (snapshot.references?.length) {
-    const content = `
-      <ul>
-        ${snapshot.references
-          .map(
-            (reference) =>
-              `<li>${escapeHtml(
-                reference.name ??
-                  reference.fullName ??
-                  reference.description,
-              )}</li>`,
-          )
-          .join("")}
-      </ul>
-    `;
-
-    html += section(
+    y = addSectionTitle(
+      lines,
       "References",
-      content,
+      y,
     );
+
+    for (const item of snapshot.references) {
+      y = addBullet(
+        lines,
+        item.name ??
+          item.fullName ??
+          item.description,
+        y,
+      );
+    }
+
+    y += 10;
   }
 
   /**
@@ -713,38 +700,72 @@ export async function generateCVJpg(
   if (snapshot.customSections?.length) {
     for (const custom of snapshot.customSections) {
       const title =
-        clean(custom.title) ||
-        clean(custom.name);
+        text(custom.title) ||
+        text(custom.name);
 
       const content =
         custom.content ??
         custom.description;
 
-      if (title && content) {
-        html += section(
+      if (title && text(content)) {
+        y = addSectionTitle(
+          lines,
           title,
-          `<div class="description">
-            ${escapeHtml(content)}
-          </div>`,
+          y,
         );
+
+        y = addText(
+          lines,
+          content,
+          80,
+          y,
+          17,
+        );
+
+        y += 10;
       }
     }
   }
 
-  html += `
-  </div>
-</body>
-</html>
-  `;
+  /**
+   * Create a dynamic-height SVG.
+   *
+   * The width is kept at 1240px so the
+   * resulting JPG is suitable for CV preview
+   * and download.
+   */
+  const width = 1240;
+  const height = Math.max(
+    1754,
+    y + 80,
+  );
+
+  const svg = `
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="${width}"
+  height="${height}"
+  viewBox="0 0 ${width} ${height}"
+>
+  <rect
+    width="${width}"
+    height="${height}"
+    fill="#ffffff"
+  />
+
+  ${lines.join("\n")}
+</svg>
+`;
 
   /**
-   * Convert the HTML CV into a JPEG image.
+   * SVG → JPEG conversion.
    */
   return sharp(
-    Buffer.from(html, "utf-8"),
+    Buffer.from(svg, "utf8"),
   )
     .jpeg({
       quality: 92,
+      chromaSubsampling: "4:4:4",
     })
     .toBuffer();
 }
