@@ -1,17 +1,26 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  readFile,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 
 import { db } from "../../config/database.js";
 import { AppError } from "../../errors/app-error.js";
 import type { CreateCVExportInput } from "../../validation/cv/cv-export.schema.js";
+import { generateCVDocx } from "./docx-generator.service.js";
 import { generateCVPdf } from "./pdf-generator.service.js";
 
 export const cvExportService = {
   /**
    * Verify that the CV belongs to the authenticated user.
    */
-  async verifyCVOwnership(userId: string, cvId: string) {
+  async verifyCVOwnership(
+    userId: string,
+    cvId: string,
+  ) {
     const cv = await db.orm.public.CV.where({
       id: cvId,
       userId,
@@ -27,21 +36,17 @@ export const cvExportService = {
   /**
    * Create a CV export.
    *
-   * Currently PDF generation is supported.
+   * PDF and DOCX generation are supported.
    */
   async createExport(
     userId: string,
     cvId: string,
     input: CreateCVExportInput,
   ) {
-    const cv = await this.verifyCVOwnership(userId, cvId);
-
-    if (input.format !== "PDF") {
-      throw new AppError(
-        `${input.format} export generation is not implemented yet`,
-        501,
-      );
-    }
+    const cv = await this.verifyCVOwnership(
+      userId,
+      cvId,
+    );
 
     const [
       personalInformation,
@@ -67,9 +72,13 @@ export const cvExportService = {
       customSections,
       sectionSettings,
     ] = await Promise.all([
-      db.orm.public.PersonalInformation.where({ cvId }).first(),
+      db.orm.public.PersonalInformation.where({
+        cvId,
+      }).first(),
 
-      db.orm.public.ProfessionalSummary.where({ cvId }).first(),
+      db.orm.public.ProfessionalSummary.where({
+        cvId,
+      }).first(),
 
       db.orm.public.Education.where({ cvId })
         .orderBy((item) => item.sortOrder.asc())
@@ -127,7 +136,9 @@ export const cvExportService = {
         .orderBy((item) => item.sortOrder.asc())
         .all(),
 
-      db.orm.public.ExtracurricularActivity.where({ cvId })
+      db.orm.public.ExtracurricularActivity.where({
+        cvId,
+      })
         .orderBy((item) => item.sortOrder.asc())
         .all(),
 
@@ -153,7 +164,10 @@ export const cvExportService = {
     ]);
 
     /**
-     * Build a complete CV snapshot for PDF generation.
+     * Build a complete CV snapshot.
+     *
+     * The same snapshot is used by both
+     * PDF and DOCX generators.
      */
     const snapshot = {
       cv: {
@@ -191,9 +205,12 @@ export const cvExportService = {
     };
 
     /**
-     * Generate the actual PDF.
+     * Generate the requested export format.
      */
-    const pdfBuffer = await generateCVPdf(snapshot);
+    const generatedBuffer =
+      input.format === "PDF"
+        ? await generateCVPdf(snapshot)
+        : await generateCVDocx(snapshot);
 
     /**
      * Create the local export directory.
@@ -209,9 +226,18 @@ export const cvExportService = {
     });
 
     /**
-     * Generate a unique PDF filename.
+     * Select the correct file extension.
      */
-    const fileName = `${cvId}-${randomUUID()}.pdf`;
+    const extension =
+      input.format === "PDF"
+        ? "pdf"
+        : "docx";
+
+    /**
+     * Generate a unique filename.
+     */
+    const fileName =
+      `${cvId}-${randomUUID()}.${extension}`;
 
     const filePath = path.join(
       exportDirectory,
@@ -219,37 +245,66 @@ export const cvExportService = {
     );
 
     /**
-     * Save the generated PDF to disk.
+     * Save the generated file to disk.
      */
-    await writeFile(filePath, pdfBuffer);
+    await writeFile(
+      filePath,
+      generatedBuffer,
+    );
 
     /**
-     * Store the relative file URL in the database.
+     * Store the relative file URL.
      */
-    const fileUrl = `/exports/${fileName}`;
+    const fileUrl =
+      `/exports/${fileName}`;
 
-    const exportRecord = await db.orm.public.CVExport.create({
-      cvId,
-      format: "PDF",
-      fileUrl,
-      fileSize: pdfBuffer.length,
-    });
+    try {
+      const exportRecord =
+        await db.orm.public.CVExport.create({
+          cvId,
+          format: input.format,
+          fileUrl,
+          fileSize: generatedBuffer.length,
+        });
 
-    return {
-      ...exportRecord,
-      generatedFileSize: pdfBuffer.length,
-    };
+      return {
+        ...exportRecord,
+        generatedFileSize:
+          generatedBuffer.length,
+      };
+    } catch (error) {
+      /**
+       * If database creation fails,
+       * remove the generated file.
+       */
+      try {
+        await unlink(filePath);
+      } catch {
+        // Ignore cleanup failure.
+      }
+
+      throw error;
+    }
   },
 
   /**
    * Get all exports for a CV.
    */
-  async getExports(userId: string, cvId: string) {
-    await this.verifyCVOwnership(userId, cvId);
+  async getExports(
+    userId: string,
+    cvId: string,
+  ) {
+    await this.verifyCVOwnership(
+      userId,
+      cvId,
+    );
 
     return db.orm.public.CVExport
       .where({ cvId })
-      .orderBy((exportRecord) => exportRecord.createdAt.desc())
+      .orderBy(
+        (exportRecord) =>
+          exportRecord.createdAt.desc(),
+      )
       .all();
   },
 
@@ -261,17 +316,24 @@ export const cvExportService = {
     cvId: string,
     exportId: string,
   ) {
-    await this.verifyCVOwnership(userId, cvId);
+    await this.verifyCVOwnership(
+      userId,
+      cvId,
+    );
 
-    const exportRecord = await db.orm.public.CVExport
-      .where({
-        id: exportId,
-        cvId,
-      })
-      .first();
+    const exportRecord =
+      await db.orm.public.CVExport
+        .where({
+          id: exportId,
+          cvId,
+        })
+        .first();
 
     if (!exportRecord) {
-      throw new AppError("CV export not found", 404);
+      throw new AppError(
+        "CV export not found",
+        404,
+      );
     }
 
     return exportRecord;
@@ -280,18 +342,20 @@ export const cvExportService = {
   /**
    * Download a generated export file.
    *
-   * Ownership is verified before reading the physical file.
+   * Ownership is verified before reading
+   * the physical file.
    */
   async downloadExport(
     userId: string,
     cvId: string,
     exportId: string,
   ) {
-    const exportRecord = await this.getExport(
-      userId,
-      cvId,
-      exportId,
-    );
+    const exportRecord =
+      await this.getExport(
+        userId,
+        cvId,
+        exportId,
+      );
 
     if (!exportRecord.fileUrl) {
       throw new AppError(
@@ -301,23 +365,45 @@ export const cvExportService = {
     }
 
     /**
-     * Extract only the filename from the stored URL.
+     * Only use the filename portion of the stored URL.
      *
-     * This prevents arbitrary filesystem path traversal.
+     * This prevents filesystem path traversal.
      */
     const fileName = path.basename(
       exportRecord.fileUrl,
     );
 
-    const filePath = path.resolve(
-      process.cwd(),
-      "storage",
-      "exports",
+    /**
+     * PDF and DOCX downloads are supported.
+     */
+    const supportedFile =
+      (exportRecord.format === "PDF" &&
+        fileName.endsWith(".pdf")) ||
+      (exportRecord.format === "DOCX" &&
+        fileName.endsWith(".docx"));
+
+    if (!supportedFile) {
+      throw new AppError(
+        "This export format is not supported for download",
+        501,
+      );
+    }
+
+    const exportDirectory =
+      path.resolve(
+        process.cwd(),
+        "storage",
+        "exports",
+      );
+
+    const filePath = path.join(
+      exportDirectory,
       fileName,
     );
 
     try {
-      const fileBuffer = await readFile(filePath);
+      const fileBuffer =
+        await readFile(filePath);
 
       return {
         exportRecord,
@@ -333,19 +419,49 @@ export const cvExportService = {
   },
 
   /**
-   * Delete one export record.
+   * Delete one export record and its
+   * physical generated file.
    */
   async deleteExport(
     userId: string,
     cvId: string,
     exportId: string,
   ) {
-    await this.getExport(
-      userId,
-      cvId,
-      exportId,
-    );
+    const exportRecord =
+      await this.getExport(
+        userId,
+        cvId,
+        exportId,
+      );
 
+    /**
+     * Remove the physical file first.
+     */
+    if (exportRecord.fileUrl) {
+      const fileName = path.basename(
+        exportRecord.fileUrl,
+      );
+
+      const filePath = path.resolve(
+        process.cwd(),
+        "storage",
+        "exports",
+        fileName,
+      );
+
+      try {
+        await unlink(filePath);
+      } catch {
+        /**
+         * The file may already be missing.
+         * Database cleanup should still continue.
+         */
+      }
+    }
+
+    /**
+     * Remove the database export record.
+     */
     await db.orm.public.CVExport
       .where({
         id: exportId,

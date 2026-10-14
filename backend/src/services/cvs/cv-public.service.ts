@@ -79,6 +79,10 @@ export const cvPublicService = {
    * Get a public CV by its slug.
    *
    * This method does NOT require authentication.
+   *
+   * Important:
+   * Never return internal database metadata through
+   * the public endpoint.
    */
   async getPublicCV(slug: string) {
     const cv = await db.orm.public.CV
@@ -94,6 +98,18 @@ export const cvPublicService = {
       throw new AppError("Public CV not found", 404);
     }
 
-    return cv;
+    /**
+     * Return only information that belongs to the
+     * public CV representation.
+     *
+     * Internal fields such as userId, database ID,
+     * timestamps, version and visibility are intentionally
+     * excluded.
+     */
+    return {
+      title: cv.title,
+      slug: cv.slug,
+      data: cv.data,
+    };
   },
 };

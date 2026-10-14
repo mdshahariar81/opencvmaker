@@ -10,6 +10,7 @@ import { AppError } from "../../errors/app-error.js";
  * - CV listing
  * - CV retrieval
  * - Full CV retrieval
+ * - CV template assignment
  * - CV duplication
  * - CV status management
  * - CV update
@@ -253,6 +254,70 @@ export const cvService = {
 
       customSections,
       sectionSettings,
+    };
+  },
+
+  /**
+   * Assign an active template to a CV.
+   *
+   * Verifies:
+   * - The CV belongs to the authenticated user.
+   * - The requested template exists.
+   * - The requested template is active.
+   */
+  async updateTemplate(
+    userId: string,
+    cvId: string,
+    templateId: string,
+  ) {
+    /**
+     * Verify CV ownership before changing anything.
+     */
+    const cv = await db.orm.public.CV
+      .where({
+        id: cvId,
+        userId,
+      })
+      .first();
+
+    if (!cv) {
+      throw new AppError("CV not found", 404);
+    }
+
+    /**
+     * Only active templates can be assigned.
+     */
+    const template =
+      await db.orm.public.Template
+        .where({
+          id: templateId,
+          isActive: true,
+        })
+        .first();
+
+    if (!template) {
+      throw new AppError(
+        "Template not found or inactive",
+        404,
+      );
+    }
+
+    /**
+     * Update the CV with the selected template.
+     */
+    const updatedCV =
+      await db.orm.public.CV
+        .where({
+          id: cvId,
+          userId,
+        })
+        .update({
+          templateId: template.id,
+        });
+
+    return {
+      cv: updatedCV,
+      template,
     };
   },
 

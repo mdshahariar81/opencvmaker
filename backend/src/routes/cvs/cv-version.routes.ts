@@ -8,7 +8,13 @@ import { cvVersionParamSchema } from "../../validation/cv/cv-version.schema.js";
 
 /**
  * CV Version Routes
+ * CV create version snapshots and manage previous versions.
  *
+ * All CV version operations require authentication.
+ *
+ * The authenticated user's ID comes from
+ * the verified JWT token, never from the request body.
+ * 
  * Handles:
  * - Creating a CV snapshot
  * - Listing CV versions

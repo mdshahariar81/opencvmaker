@@ -6,6 +6,7 @@ import { cvService } from "../../services/cvs/cv.service.js";
 import {
   createCVSchema,
   updateCVSchema,
+  updateCVTemplateSchema,
   cvIdParamSchema,
 } from "../../validation/cv/cv.schema.js";
 
@@ -168,6 +169,46 @@ export async function cvRoutes(app: FastifyInstance) {
         status: "success",
         message: "CV updated successfully",
         cv,
+      });
+    },
+  );
+
+  /**
+   * Update CV template.
+   *
+   * PATCH /cvs/:id/template
+   *
+   * Assigns an existing active template to the CV.
+   */
+  app.patch(
+    "/cvs/:id/template",
+    {
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      const { id } = cvIdParamSchema.parse(request.params);
+
+      const { templateId } =
+        updateCVTemplateSchema.parse(
+          request.body,
+        );
+
+      const { sub: userId } = request.user as {
+        sub: string;
+        role: string;
+      };
+
+      const result =
+        await cvService.updateTemplate(
+          userId,
+          id,
+          templateId,
+        );
+
+      return reply.status(200).send({
+        status: "success",
+        message: "CV template updated successfully",
+        ...result,
       });
     },
   );

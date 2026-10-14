@@ -68,6 +68,22 @@ export const updateCVSchema = z
 export type UpdateCVInput = z.infer<typeof updateCVSchema>;
 
 /**
+ * CV template assignment validation schema.
+ *
+ * Used when assigning an existing template to a CV.
+ */
+export const updateCVTemplateSchema = z.object({
+  templateId: z
+    .string()
+    .trim()
+    .min(1, "Template ID is required"),
+});
+
+export type UpdateCVTemplateInput = z.infer<
+  typeof updateCVTemplateSchema
+>;
+
+/**
  * CV route parameter validation.
  *
  * Used by all nested CV section routes:
