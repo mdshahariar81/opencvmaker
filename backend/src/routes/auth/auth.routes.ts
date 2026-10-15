@@ -12,7 +12,7 @@ import { registerSchema } from "../../validation/auth/register.schema.js";
 
 /**
  * Authentication routes.
- *
+ * authRoutes function registers all authentication-related routes with the Fastify application instance.
  * Handles registration, login, current-user,
  * logout, and authentication-related HTTP requests.
  */
