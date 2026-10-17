@@ -2,6 +2,8 @@ import { z } from "zod";
 
 /**
  * CV creation validation schema.
+ *
+ * Used when creating a new CV.
  */
 export const createCVSchema = z.object({
   title: z
@@ -25,6 +27,23 @@ export type CreateCVInput = z.infer<typeof createCVSchema>;
 
 /**
  * CV update validation schema.
+ *
+ * IMPORTANT SECURITY BOUNDARY:
+ *
+ * The following fields are intentionally NOT allowed here:
+ *
+ * - status
+ * - visibility
+ * - isPublic
+ *
+ * These fields have dedicated endpoints with their own
+ * authorization and business rules:
+ *
+ * - PATCH /cvs/:id/status
+ * - PATCH /cvs/:id/public
+ *
+ * This prevents the generic CV update endpoint from
+ * bypassing status-transition and public-visibility rules.
  */
 export const updateCVSchema = z
   .object({
@@ -35,27 +54,8 @@ export const updateCVSchema = z
       .max(200, "CV title must not exceed 200 characters")
       .optional(),
 
-    templateId: z
-      .string()
-      .trim()
-      .min(1, "Template ID cannot be empty")
-      .nullable()
-      .optional(),
-
     data: z
       .record(z.string(), z.unknown())
-      .optional(),
-
-    status: z
-      .enum(["DRAFT", "PUBLISHED", "ARCHIVED"])
-      .optional(),
-
-    visibility: z
-      .enum(["PUBLIC", "PRIVATE"])
-      .optional(),
-
-    isPublic: z
-      .boolean()
       .optional(),
   })
   .refine(
@@ -66,11 +66,13 @@ export const updateCVSchema = z
   );
 
 export type UpdateCVInput = z.infer<typeof updateCVSchema>;
-
 /**
  * CV template assignment validation schema.
  *
  * Used when assigning an existing template to a CV.
+ *
+ * Route:
+ * PATCH /cvs/:id/template
  */
 export const updateCVTemplateSchema = z.object({
   templateId: z
@@ -86,7 +88,8 @@ export type UpdateCVTemplateInput = z.infer<
 /**
  * CV route parameter validation.
  *
- * Used by all nested CV section routes:
+ * Used by all CV routes:
+ * /cvs/:id
  * /cvs/:id/...
  */
 export const cvIdParamSchema = z.object({
