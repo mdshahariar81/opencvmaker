@@ -869,36 +869,30 @@ export const cvService = {
 
   /**
    * Update CV core information.
+   *
+   * IMPORTANT SECURITY BOUNDARY:
+   * - Only generic CV fields are allowed here.
+   * - Status must be changed through updateStatus().
+   * - Public visibility must be changed through the public settings service.
+   * - Template assignment must be changed through updateTemplate().
    */
   async updateCV(
     userId: string,
     cvId: string,
     data: {
       title?: string;
-      slug?: string | null;
-      status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
-      visibility?: "PRIVATE" | "PUBLIC";
-      isPublic?: boolean;
-      templateId?: string | null;
       data?: Record<string, unknown>;
     },
   ) {
-    /**
-     * Verify ownership before updating.
-     */
     await this.getCVById(userId, cvId);
 
-    /**
-     * Keep the route/service type developer-friendly while
-     * passing the JSON field to Prisma's generated type.
-     */
     const updateData = {
-      ...data,
+      ...(data.title !== undefined
+        ? { title: data.title }
+        : {}),
 
       ...(data.data !== undefined
-        ? {
-            data: data.data as any,
-          }
+        ? { data: data.data as any }
         : {}),
     };
 
