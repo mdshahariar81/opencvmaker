@@ -2,19 +2,17 @@ import type { FastifyInstance } from "fastify";
 
 import { authenticate } from "../../middleware/authenticate.js";
 import { cvVersionService } from "../../services/cvs/cv-version.service.js";
-
 import { cvIdParamSchema } from "../../validation/cv/cv.schema.js";
 import { cvVersionParamSchema } from "../../validation/cv/cv-version.schema.js";
 
 /**
  * CV Version Routes
- * CV create version snapshots and manage previous versions.
  *
  * All CV version operations require authentication.
  *
  * The authenticated user's ID comes from
  * the verified JWT token, never from the request body.
- * 
+ *
  * Handles:
  * - Creating a CV snapshot
  * - Listing CV versions
@@ -31,9 +29,7 @@ export async function cvVersionRoutes(app: FastifyInstance) {
     "/cvs/:id/versions",
     { preHandler: authenticate },
     async (request, reply) => {
-      const { id: cvId } = cvIdParamSchema.parse(
-        request.params,
-      );
+      const { id: cvId } = cvIdParamSchema.parse(request.params);
 
       const { sub: userId } = request.user as {
         sub: string;
@@ -62,9 +58,7 @@ export async function cvVersionRoutes(app: FastifyInstance) {
     "/cvs/:id/versions",
     { preHandler: authenticate },
     async (request, reply) => {
-      const { id: cvId } = cvIdParamSchema.parse(
-        request.params,
-      );
+      const { id: cvId } = cvIdParamSchema.parse(request.params);
 
       const { sub: userId } = request.user as {
         sub: string;
@@ -92,9 +86,7 @@ export async function cvVersionRoutes(app: FastifyInstance) {
     "/cvs/:id/versions/:version",
     { preHandler: authenticate },
     async (request, reply) => {
-      const { id: cvId } = cvIdParamSchema.parse(
-        request.params,
-      );
+      const { id: cvId } = cvIdParamSchema.parse(request.params);
 
       const { version: versionNumber } =
         cvVersionParamSchema.parse(request.params);
@@ -130,9 +122,7 @@ export async function cvVersionRoutes(app: FastifyInstance) {
     "/cvs/:id/versions/:version/restore",
     { preHandler: authenticate },
     async (request, reply) => {
-      const { id: cvId } = cvIdParamSchema.parse(
-        request.params,
-      );
+      const { id: cvId } = cvIdParamSchema.parse(request.params);
 
       const { version: versionNumber } =
         cvVersionParamSchema.parse(request.params);
